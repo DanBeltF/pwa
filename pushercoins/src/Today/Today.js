@@ -15,21 +15,25 @@ class Today extends Component {
     }
     // This is called when an instance of a component is being created and inserted into the DOM.
     componentWillMount () {
+        // establish a connection to Pusher
+        this.pusher = new Pusher('4161815afb3ceb1aed1b', {
+            cluster: 'us2',
+            encrypted: true
+        });
+        // Subscribe to the 'coin-prices' channel
+        this.prices = this.pusher.subscribe('coin-prices');
+
         axios.get('https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH,LTC&tsyms=USD')
             .then(response => {
-                // We set the latest prices in the state to the prices gotten from Cryptocurrency.
                 this.setState({ btcprice: response.data.BTC.USD });
+                localStorage.setItem('BTC', response.data.BTC.USD);
+
                 this.setState({ ethprice: response.data.ETH.USD });
+                localStorage.setItem('ETH', response.data.ETH.USD);
+
                 this.setState({ ltcprice: response.data.LTC.USD });
-                // establish a connection to Pusher
-                this.pusher = new Pusher('4161815afb3ceb1aed1b', {
-                    cluster: 'us2',
-                    encrypted: true
-                });
-                // Subscribe to the 'coin-prices' channel
-                this.prices = this.pusher.subscribe('coin-prices');
+                localStorage.setItem('LTC', response.data.LTC.USD);
             })
-            // Catch any error here
             .catch(error => {
                 console.log(error)
             })
@@ -48,6 +52,11 @@ class Today extends Component {
     }
 
     componentDidMount () {
+        if (!navigator.onLine) {
+            this.setState({ btcprice: localStorage.getItem('BTC') });
+            this.setState({ ethprice: localStorage.getItem('ETH') });
+            this.setState({ ltcprice: localStorage.getItem('LTC') });
+        }
         setInterval(() => {
             axios.get('https://min-api.cryptocompare.com/data/pricemulti?fsyms=BTC,ETH,LTC&tsyms=USD')
                 .then(response => {
